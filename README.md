@@ -1,3 +1,13 @@
+# immich Proxmox VE Helper Script
+This repository is solely intended to create a new immich helper script that automates native LXC install on Proxmox. I hope that one day it can be incorporated in the tteck repository.
+
+Use of the script can be done by pasting in the Proxmox shell:
+
+`bash -c "$(wget -qLO - https://github.com/chmistry/proxmox-immich/raw/main/ct/immich.sh)"`
+
+This script is under development and not fully tested.
+It takes a long time to install!
+
 <div align="center">
   <a href="#">
     <img src="https://raw.githubusercontent.com/tteck/Proxmox/main/misc/images/logo.png" height="100px" />
