@@ -19,11 +19,11 @@ EOF
 header_info
 echo -e "Loading..."
 APP="immich"
-var_disk="50"
-var_cpu="4"
-var_ram="8192"
-var_os="ubuntu"
-var_version="24.04"
+var_disk="5"
+var_cpu="1"
+var_ram="512"
+var_os="debian"
+var_version="12"
 variables
 color
 catch_errors
