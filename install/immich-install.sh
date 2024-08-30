@@ -32,12 +32,12 @@ $STD apt install -y postgresql postgresql-16-pgvector
 msg_ok "Installed Postgresql and pgvector"
 
 msg_info "Setting up database"
-su postgres <<EOF
-psql -c "CREATE DATABASE immich;"
-psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD 'YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w';"
-psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
-psql -c "ALTER USER immich WITH SUPERUSER;"
-EOF
+#su postgres <<EOF
+$STD sudo -u postgres psql -c "CREATE DATABASE immich;"
+$STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD 'YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w';"
+$STD sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
+$STD sudo -u postgres psql -c "ALTER USER immich WITH SUPERUSER;"
+#EOF
 msg_ok "Database setup completed"
 
 msg_info "Installing ffmpeg yellyfin"
@@ -69,6 +69,7 @@ $STD useradd -m immich
 msg_ok "User immich added"
 
 msg_info "Installing Node.js and ${APPLICATION}"
+#below blob needs to be in one session, separate su -c commands will not work (mainly because nvm is not recognized).
 su immich -s /usr/bin/bash <<EOF
 bash <(curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh)
 export NVM_DIR="\$HOME/.nvm"
