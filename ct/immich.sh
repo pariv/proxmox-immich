@@ -19,7 +19,7 @@ EOF
 header_info
 echo -e "Loading..."
 APP="immich"
-var_disk="5"
+var_disk="8"
 var_cpu="1"
 var_ram="512"
 var_os="ubuntu"
