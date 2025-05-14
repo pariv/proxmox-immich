@@ -70,18 +70,47 @@ msg_ok "User immich added"
 
 msg_info "Installing Node.js and ${APPLICATION}"
 #below blob needs to be in one session, separate su -c commands will not work (mainly because nvm is not recognized).
-su immich -s /usr/bin/bash <<EOF
-bash <(curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh)
-export NVM_DIR="\$HOME/.nvm"
-[ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
-[ -s "\$NVM_DIR/bash_completion" ] && \. "\$NVM_DIR/bash_completion"
-nvm install 20
-git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
+# su immich -s /usr/bin/bash <<EOF
+# bash <(curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh)
+# export NVM_DIR="\$HOME/.nvm"
+# [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
+# [ -s "\$NVM_DIR/bash_completion" ] && \. "\$NVM_DIR/bash_completion"
+# nvm install 20
+# git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
+# cd /tmp/immich-in-lxc
+# sudo ./pre-install.sh
+# if [ $? -ne 0 ]; then { echo "pre-install failed, aborting." ; exit 1; } fi
+# ./install.sh
+# if [ $? -ne 0 ]; then { echo "first install call failed, aborting." ; exit 1; } fi
+# sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
+# ./install.sh
+# EOF
+
+su immich -s /usr/bin/bash -c '
+    git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
+'
 cd /tmp/immich-in-lxc
-./pre-install.sh
-if [ $? -ne 0 ]; then { echo "pre-install failed, aborting." ; exit 1; } fi
-./install.sh
-if [ $? -ne 0 ]; then { echo "first install call failed, aborting." ; exit 1; } fi
+./pre-install.sh || { 
+    echo "pre-install failed, aborting." >&2
+    exit 1
+}
+
+su immich -s /usr/bin/bash <<'EOF'
+set -euo pipefail
+
+export NVM_DIR="$HOME/.nvm"
+# Устанавливаем nvm без sudo
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+# Загружаем nvm в текущую сессию
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+nvm install 20
+
+cd /tmp/immich-in-lxc
+./install.sh || { echo "first install failed"; exit 1; }
+
 sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
 ./install.sh
 EOF
