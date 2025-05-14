@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-source <(curl -s https://raw.githubusercontent.com/chmistry/proxmox-immich/main/misc/build.func)
+source <(curl -s https://raw.githubusercontent.com/pariv/proxmox-immich/main/misc/build.func)
 # Copyright (c) 2024 chmistry
 # Author: chmistry
 # License: MIT

@@ -3,7 +3,7 @@ This repository is solely intended to create a new immich helper script that aut
 
 Use of the script can be done by pasting in the Proxmox shell:
 
-`bash -c "$(wget -qLO - https://github.com/chmistry/proxmox-immich/raw/main/ct/immich.sh)"`
+`bash -c "$(wget -qLO - https://github.com/pariv/proxmox-immich/raw/main/ct/immich.sh)"`
 
 This script is under development and not fully tested.
 It takes a long time to install!

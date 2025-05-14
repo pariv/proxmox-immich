@@ -78,7 +78,7 @@ export NVM_DIR="\$HOME/.nvm"
 nvm install 20
 git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
 cd /tmp/immich-in-lxc
-./install.sh
+./pre-install.sh
 sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
 ./install.sh
 EOF
