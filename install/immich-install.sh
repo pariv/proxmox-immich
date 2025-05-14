@@ -11,7 +11,6 @@ verb_ip6
 catch_errors
 setting_up_container
 network_check
-root_check
 update_os
 
 #!/bin/bash
