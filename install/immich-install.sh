@@ -11,42 +11,103 @@ verb_ip6
 catch_errors
 setting_up_container
 network_check
+root_check
 update_os
 
-msg_info "Installing Dependencies"
-$STD apt install -y curl
-$STD apt install -y git
-$STD apt install -y python3-venv
-$STD apt install -y python3-dev
-$STD apt install -y build-essential
-$STD apt install -y unzip
-$STD apt install -y postgresql-common
-$STD apt install -y gnupg
-$STD apt install -y software-properties-common
-$STD apt install -y redis
-$STD apt install -y jq
-msg_ok "Installed Dependencies"
+#!/bin/bash
 
-msg_info "Installing Postgresql and pgvector"
-$STD /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-$STD apt install -y postgresql postgresql-17-pgvector
-msg_ok "Installed Postgresql and pgvector"
+# Скрипт установки Immich в контейнере Proxmox
+# Основан на репозитории https://github.com/loeeeee/immich-in-lxc
 
-msg_info "Setting up database"
-$STD sudo -u postgres psql -c "CREATE DATABASE immich;"
-$STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD 'YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w';"
-$STD sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
-$STD sudo -u postgres psql -c "ALTER USER immich WITH SUPERUSER;"
-msg_ok "Database setup completed"
+set -euo pipefail
 
-msg_info "Installing ffmpeg jellyfin"
-$STD add-apt-repository universe -y
-$STD mkdir -p /etc/apt/keyrings
-curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
-$STD export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
-$STD export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
-$STD export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
-cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+# Базовая конфигурация
+IMMICH_USER="immich"
+IMMICH_DIR="/home/$IMMICH_USER"
+UPLOAD_DIR="$IMMICH_DIR/upload"
+REPO_URL="https://github.com/loeeeee/immich-in-lxc.git"
+REPO_DIR="$IMMICH_DIR/immich-in-lxc"
+LOG_DIR="/var/log/immich"
+IMMICH_REPO_TAG="v1.129.0" # текущая стабильная версия
+DB_PASSWORD="$(openssl rand -base64 24)" # генерация безопасного пароля
+
+# Цветной вывод для улучшения читаемости
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+
+msg_warn() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
+# Определение версии Ubuntu/Debian
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS=$ID
+    VERSION=$VERSION_ID
+    msg_info "Обнаружена ОС: $OS $VERSION"
+else
+    msg_error "Невозможно определить версию ОС"
+fi
+
+# Проверка поддерживаемой версии ОС
+if [ "$OS" = "ubuntu" ]; then
+    if [ "$VERSION" != "24.04" ]; then
+        msg_warn "Рекомендуется использовать Ubuntu 24.04, текущая версия: $VERSION"
+    fi
+    DEP_SCRIPT="dep-ubuntu.sh"
+elif [ "$OS" = "debian" ]; then
+    if [ "$VERSION" != "12" ]; then
+        msg_warn "Рекомендуется использовать Debian 12, текущая версия: $VERSION"
+    fi
+    DEP_SCRIPT="dep-debian.sh"
+else
+    msg_error "Неподдерживаемая ОС: $OS"
+fi
+
+# Обновление системы
+msg_info "Обновление системы..."
+apt update && apt upgrade -y
+msg_ok "Система обновлена"
+
+# Установка базовых зависимостей
+msg_info "Установка базовых зависимостей..."
+apt install -y curl git python3-venv python3-dev build-essential unzip postgresql-common gnupg software-properties-common
+msg_ok "Базовые зависимости установлены"
+
+# Установка PostgreSQL с pgvector
+msg_info "Установка PostgreSQL с расширением pgvector..."
+/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+apt install -y postgresql-17 postgresql-17-pgvector
+msg_ok "PostgreSQL установлен"
+
+# Настройка базы данных
+msg_info "Настройка базы данных PostgreSQL..."
+sudo -u postgres psql -c "CREATE DATABASE immich;"
+sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
+sudo -u postgres psql -c "ALTER USER immich WITH SUPERUSER;"
+msg_ok "База данных настроена"
+
+# Установка Redis
+msg_info "Установка Redis..."
+apt install -y redis
+msg_ok "Redis установлен"
+
+# Установка FFmpeg от Jellyfin с поддержкой аппаратного ускорения
+msg_info "Установка FFmpeg с поддержкой аппаратного ускорения..."
+if [ "$OS" = "ubuntu" ]; then
+    apt install -y curl gnupg software-properties-common
+    add-apt-repository universe -y
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
+    export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
+    export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
+    export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
+    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
 Types: deb
 URIs: https://repo.jellyfin.org/${VERSION_OS}
 Suites: ${VERSION_CODENAME}
@@ -54,94 +115,119 @@ Components: main
 Architectures: ${DPKG_ARCHITECTURE}
 Signed-By: /etc/apt/keyrings/jellyfin.gpg
 EOF
-$STD apt update
+elif [ "$OS" = "debian" ]; then
+    apt install -y curl gnupg
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
+    export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
+    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+Types: deb
+URIs: https://repo.jellyfin.org/debian
+Suites: bookworm
+Components: main
+Architectures: ${DPKG_ARCHITECTURE}
+Signed-By: /etc/apt/keyrings/jellyfin.gpg
+EOF
+fi
 
-$STD apt install -y jellyfin-ffmpeg7
+apt update
+apt install -y jellyfin-ffmpeg7
+ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/bin/ffmpeg
+ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/bin/ffprobe
+msg_ok "FFmpeg установлен"
 
-ln -s /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/bin/ffmpeg
-ln -s /usr/lib/jellyfin-ffmpeg/ffprobe /usr/bin/ffprobe
-msg_ok "Installed ffmpeg jellyfin"
+# Создание пользователя Immich
+msg_info "Создание пользователя Immich..."
+adduser --shell /bin/bash --disabled-password $IMMICH_USER --comment "Immich Mich" --gecos ""
+mkdir -p $UPLOAD_DIR
+chown -R $IMMICH_USER:$IMMICH_USER $IMMICH_DIR
+msg_ok "Пользователь Immich создан"
 
-msg_info "Adding immich user"
-$STD adduser --shell /bin/bash --disabled-password immich --comment "Immich Mich"
-msg_ok "User immich added"
+# Установка Node.js через nvm для пользователя Immich
+msg_info "Установка Node.js для пользователя Immich..."
+su - $IMMICH_USER -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash'
+su - $IMMICH_USER -c 'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install 22'
+msg_ok "Node.js установлен"
 
-msg_info "Installing Node.js and cloning repository"
-su - immich -s /usr/bin/bash <<'IMMICH_EOF'
-set -euo pipefail
+# Клонирование репозитория immich-in-lxc
+msg_info "Клонирование репозитория immich-in-lxc..."
+su - $IMMICH_USER -c "git clone $REPO_URL $REPO_DIR"
+msg_ok "Репозиторий immich-in-lxc клонирован"
 
-# Установка nvm и Node.js 22
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-nvm install 22
-cd ~
-git clone https://github.com/loeeeee/immich-in-lxc.git
-cd immich-in-lxc
-IMMICH_EOF
-msg_ok "Installed Node.js and cloned repository"
+# Установка зависимостей для сборки библиотек обработки изображений
+msg_info "Установка зависимостей для сборки библиотек обработки изображений..."
+cd $REPO_DIR
+./$DEP_SCRIPT
+msg_ok "Зависимости для сборки установлены"
 
-msg_info "Running pre-install script as root"
-cd /home/immich/immich-in-lxc/
-./pre-install.sh || {
-    echo "pre-install failed, aborting." >&2
-    exit 1
-}
-msg_ok "Pre-install completed"
+# Сборка библиотек обработки изображений
+msg_info "Сборка библиотек обработки изображений (это может занять некоторое время)..."
+./pre-install.sh
+msg_ok "Библиотеки обработки изображений собраны"
 
-msg_info "Installing Immich"
-su - immich -s /usr/bin/bash <<'INSTALL_EOF'
-set -euo pipefail
-cd ~/immich-in-lxc
+# Создание .env файла
+msg_info "Создание .env файла для установки Immich..."
+cat > $REPO_DIR/.env << EOF
+# Installation settings
+REPO_TAG=$IMMICH_REPO_TAG
+INSTALL_DIR=$IMMICH_DIR
+UPLOAD_DIR=$UPLOAD_DIR
+isCUDA=false
+PROXY_NPM=
+PROXY_NPM_DIST=
+PROXY_POETRY=
+EOF
+msg_ok ".env файл создан"
 
-# First run to generate .env file
-./install.sh || {
-    echo "first install failed" >&2
-    exit 1
-}
+# Запуск скрипта установки Immich
+msg_info "Установка Immich..."
+su - $IMMICH_USER -c "cd $REPO_DIR && ./install.sh"
+msg_ok "Immich установлен"
 
-# Настройка пароля в runtime.env
-sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
+# Настройка runtime.env
+msg_info "Настройка runtime.env..."
+sed -i "s/A_SEHR_SAFE_PASSWORD/$DB_PASSWORD/g" $IMMICH_DIR/runtime.env
+sed -i "s|America/New_York|$(timedatectl show --property=Timezone --value)|g" $IMMICH_DIR/runtime.env
+msg_ok "runtime.env настроен"
 
-# Финальный запуск install.sh
-./install.sh || {
-    echo "install.sh failed after configuration" >&2
-    exit 1
-}
-INSTALL_EOF
-msg_ok "Installed Immich"
+# Запуск post-install скрипта
+msg_info "Выполнение post-install скрипта..."
+cd $REPO_DIR
+./post-install.sh
+msg_ok "post-install скрипт выполнен"
 
-msg_info "Running post-install script as root"
-cd /home/immich/immich-in-lxc/
-./post-install.sh || {
-    echo "post-install failed, aborting." >&2
-    exit 1
-}
-msg_ok "Post-install completed"
+# Создание директории для логов
+msg_info "Создание директории для логов..."
+mkdir -p $LOG_DIR
+chown -R $IMMICH_USER:$IMMICH_USER $LOG_DIR
+msg_ok "Директория для логов создана"
 
-msg_info "Creating log directory /var/log/immich"
-mkdir -p /var/log/immich
-chown immich:immich /var/log/immich
-msg_ok "Log directory created"
-
-msg_info "Starting Immich services"
+# Запуск служб Immich
+msg_info "Запуск служб Immich..."
 systemctl daemon-reload
-systemctl restart immich-ml.service
-systemctl restart immich-web.service
-msg_ok "Started Immich services"
+systemctl enable --now immich-ml.service
+systemctl enable --now immich-web.service
+msg_ok "Службы Immich запущены"
 
-msg_info "Configuration note"
-echo "Immich установлен и запущен. Веб-интерфейс доступен на порту 2283."
-echo "Для корректной работы ML требуется настроить URL в администраторской панели:"
-echo "Administration > Settings > Machine Learning Settings > URL: http://localhost:3003"
-msg_ok "Configuration note displayed"
+# Проверка статуса служб
+msg_info "Проверка статуса служб..."
+systemctl status immich-ml.service --no-pager || true
+systemctl status immich-web.service --no-pager || true
 
-motd_ssh
-customize
+# Получение IP-адреса
+IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
-msg_info "Cleaning up"
-$STD apt-get -y autoremove
-$STD apt-get -y autoclean
-msg_ok "Cleaned"
+echo -e "\n${GREEN}=========================================${NC}"
+echo -e "${GREEN}Установка Immich успешно завершена!${NC}"
+echo -e "${GREEN}=========================================${NC}\n"
 
+echo -e "Веб-интерфейс: ${BLUE}http://$IP_ADDRESS:2283${NC}"
+echo -e "Пароль для базы данных: ${YELLOW}$DB_PASSWORD${NC}"
+echo -e "Файлы журналов: ${BLUE}$LOG_DIR${NC}"
+echo -e "\n${YELLOW}ВАЖНО: После первого входа в веб-интерфейс Immich${NC}"
+echo -e "${YELLOW}необходимо изменить URL для машинного обучения:${NC}"
+echo -e "Зайдите в: Administration > Settings > Machine Learning Settings"
+echo -e "Установите URL: ${BLUE}http://localhost:3003${NC}"
+echo -e "\nДля проверки аппаратного ускорения транскодирования:"
+echo -e "Зайдите в: Administration > Settings > Video Transcoding Settings"
+echo -e "Выберите ваш метод аппаратного ускорения (NVENC, QuickSync и т.д.)"
