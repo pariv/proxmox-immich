@@ -24,6 +24,7 @@ $STD apt install -y postgresql-common
 $STD apt install -y gnupg
 $STD apt install -y software-properties-common
 $STD apt install -y redis
+$STD apt install -y jq
 msg_ok "Installed Dependencies"
 
 msg_info "Installing Postgresql and pgvector"
