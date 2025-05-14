@@ -29,19 +29,17 @@ msg_ok "Installed Dependencies"
 
 msg_info "Installing Postgresql and pgvector"
 $STD /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-$STD apt install -y postgresql postgresql-16-pgvector
+$STD apt install -y postgresql postgresql-17-pgvector
 msg_ok "Installed Postgresql and pgvector"
 
 msg_info "Setting up database"
-#su postgres <<EOF
 $STD sudo -u postgres psql -c "CREATE DATABASE immich;"
 $STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD 'YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w';"
 $STD sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
 $STD sudo -u postgres psql -c "ALTER USER immich WITH SUPERUSER;"
-#EOF
 msg_ok "Database setup completed"
 
-msg_info "Installing ffmpeg yellyfin"
+msg_info "Installing ffmpeg jellyfin"
 $STD add-apt-repository universe -y
 $STD mkdir -p /etc/apt/keyrings
 curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
@@ -58,57 +56,46 @@ Signed-By: /etc/apt/keyrings/jellyfin.gpg
 EOF
 $STD apt update
 
-$STD apt install -y jellyfin-ffmpeg6
+$STD apt install -y jellyfin-ffmpeg7
 
-ln -s /usr/lib/jellyfin-ffmpeg/ffmpeg  /bin/ffmpeg
-ln -s /usr/lib/jellyfin-ffmpeg/ffprobe  /bin/ffprobe
-msg_ok "Installed ffmpeg yellyfin"
+ln -s /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/bin/ffmpeg
+ln -s /usr/lib/jellyfin-ffmpeg/ffprobe /usr/bin/ffprobe
+msg_ok "Installed ffmpeg jellyfin"
 
 msg_info "Adding immich user"
-$STD useradd -m immich
-#TODO: strip user login etc. (make it more a daemon user)
+$STD adduser --shell /bin/bash --disabled-password immich --comment "Immich Mich"
 msg_ok "User immich added"
 
-msg_info "Installing Node.js and ${APPLICATION}"
-#below blob needs to be in one session, separate su -c commands will not work (mainly because nvm is not recognized).
-# su immich -s /usr/bin/bash <<EOF
-# bash <(curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh)
-# export NVM_DIR="\$HOME/.nvm"
-# [ -s "\$NVM_DIR/nvm.sh" ] && \. "\$NVM_DIR/nvm.sh"
-# [ -s "\$NVM_DIR/bash_completion" ] && \. "\$NVM_DIR/bash_completion"
-# nvm install 20
-# git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
-# cd /tmp/immich-in-lxc
-# sudo ./pre-install.sh
-# if [ $? -ne 0 ]; then { echo "pre-install failed, aborting." ; exit 1; } fi
-# ./install.sh
-# if [ $? -ne 0 ]; then { echo "first install call failed, aborting." ; exit 1; } fi
-# sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
-# ./install.sh
-# EOF
-
+msg_info "Installing Node.js and cloning repository"
 su - immich -s /usr/bin/bash <<'IMMICH_EOF'
 set -euo pipefail
 
 # Установка nvm и Node.js 22
-curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-nvm install 20
-git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
+nvm install 22
+cd ~
+git clone https://github.com/loeeeee/immich-in-lxc.git
+cd immich-in-lxc
 IMMICH_EOF
+msg_ok "Installed Node.js and cloned repository"
 
-cd /tmp/immich-in-lxc
-sudo ./pre-install.sh || {
+msg_info "Running pre-install script as root"
+cd /home/immich/immich-in-lxc/
+./pre-install.sh || {
     echo "pre-install failed, aborting." >&2
     exit 1
 }
+msg_ok "Pre-install completed"
 
+msg_info "Installing Immich"
 su - immich -s /usr/bin/bash <<'INSTALL_EOF'
 set -euo pipefail
-cd /tmp/immich-in-lxc
+cd ~/immich-in-lxc
 
+# First run to generate .env file
 ./install.sh || {
     echo "first install failed" >&2
     exit 1
@@ -123,106 +110,37 @@ sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
     exit 1
 }
 INSTALL_EOF
+msg_ok "Installed Immich"
 
-#su immich -s /usr/bin/bash -c "git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc"
-#cd /tmp/immich-in-lxc
-#$su immich -s /usr/bin/bash -c "./install.sh" # creates env file
-# Replace password in runtime.env file
-#sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
-#su immich -s /usr/bin/bash -c "./install.sh" # runs rest of script
-msg_ok "Installed Node.js and ${APPLICATION}"
+msg_info "Running post-install script as root"
+cd /home/immich/immich-in-lxc/
+./post-install.sh || {
+    echo "post-install failed, aborting." >&2
+    exit 1
+}
+msg_ok "Post-install completed"
 
 msg_info "Creating log directory /var/log/immich"
 mkdir -p /var/log/immich
 chown immich:immich /var/log/immich
 msg_ok "Log directory created"
 
-msg_info "Creating Services"
-cat <<EOF >/etc/systemd/system/immich-microservices.service
-[Unit]
-Description=immich microservices
-Documentation=https://github.com/immich-app/immich
-Requires=redis-server.service
-Requires=postgresql.service
+msg_info "Starting Immich services"
+systemctl daemon-reload
+systemctl restart immich-ml.service
+systemctl restart immich-web.service
+msg_ok "Started Immich services"
 
-[Service]
-User=immich
-Group=immich
-Type=simple
-Restart=on-failure
-UMask=0077
-
-ExecStart=/bin/bash /home/immich/app/start.sh microservices
-
-SyslogIdentifier=immich-microservices
-StandardOutput=append:/var/log/immich/microservices.log
-StandardError=append:/var/log/immich/microservices.log
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-cat <<EOF >/etc/systemd/system/immich-ml.service
-[Unit]
-Description=immich machine-learning
-Documentation=https://github.com/immich-app/immich
-
-[Service]
-User=immich
-Group=immich
-Type=simple
-Restart=on-failure
-UMask=0077
-
-WorkingDirectory=/home/immich/app
-EnvironmentFile=/home/immich/runtime.env
-ExecStart=/home/immich/app/machine-learning/start.sh
-
-SyslogIdentifier=immich-machine-learning
-StandardOutput=append:/var/log/immich/ml.log
-StandardError=append:/var/log/immich/ml.log
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-cat <<EOF >/etc/systemd/system/immich-web.service
-[Unit]
-Description=immich web server
-Documentation=https://github.com/immich-app/immich
-Requires=redis-server.service
-Requires=postgresql.service
-Requires=immich-ml.service
-Requires=immich-microservices.service
-
-[Service]
-User=immich
-Group=immich
-Type=simple
-Restart=on-failure
-UMask=0077
-
-ExecStart=/bin/bash /home/immich/app/start.sh immich
-
-SyslogIdentifier=immich-web
-StandardOutput=append:/var/log/immich/web.log
-StandardError=append:/var/log/immich/web.log
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable -q --now immich-microservices.service
-systemctl enable -q --now immich-ml.service
-systemctl enable -q --now immich-web.service
-
-msg_ok "Created Services"
+msg_info "Configuration note"
+echo "Immich установлен и запущен. Веб-интерфейс доступен на порту 2283."
+echo "Для корректной работы ML требуется настроить URL в администраторской панели:"
+echo "Administration > Settings > Machine Learning Settings > URL: http://localhost:3003"
+msg_ok "Configuration note displayed"
 
 motd_ssh
 customize
 
 msg_info "Cleaning up"
-
 $STD apt-get -y autoremove
 $STD apt-get -y autoclean
 msg_ok "Cleaned"
