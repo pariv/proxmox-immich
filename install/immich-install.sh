@@ -79,6 +79,9 @@ nvm install 20
 git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
 cd /tmp/immich-in-lxc
 ./pre-install.sh
+if [ $? -ne 0 ]; then { echo "pre-install failed, aborting." ; exit 1; } fi
+./install.sh
+if [ $? -ne 0 ]; then { echo "first install call failed, aborting." ; exit 1; } fi
 sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
 ./install.sh
 EOF
