@@ -86,34 +86,42 @@ msg_info "Installing Node.js and ${APPLICATION}"
 # ./install.sh
 # EOF
 
-su immich -s /usr/bin/bash -c '
-    git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
-'
+su - immich -s /usr/bin/bash <<'IMMICH_EOF'
+set -euo pipefail
+
+# Установка nvm и Node.js 22
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+nvm install 20
+git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc
+IMMICH_EOF
+
 cd /tmp/immich-in-lxc
-./pre-install.sh || { 
+sudo ./pre-install.sh || {
     echo "pre-install failed, aborting." >&2
     exit 1
 }
 
-su immich -s /usr/bin/bash <<'EOF'
+su - immich -s /usr/bin/bash <<'INSTALL_EOF'
 set -euo pipefail
-
-export NVM_DIR="$HOME/.nvm"
-# Устанавливаем nvm без sudo
-curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-
-# Загружаем nvm в текущую сессию
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
-
-nvm install 20
-
 cd /tmp/immich-in-lxc
-./install.sh || { echo "first install failed"; exit 1; }
 
+./install.sh || {
+    echo "first install failed" >&2
+    exit 1
+}
+
+# Настройка пароля в runtime.env
 sed -i 's/A_SEHR_SAFE_PASSWORD/YUaaWZAvtL@JpNgpi3z6uL4MmDMR_w/g' runtime.env
-./install.sh
-EOF
+
+# Финальный запуск install.sh
+./install.sh || {
+    echo "install.sh failed after configuration" >&2
+    exit 1
+}
+INSTALL_EOF
 
 #su immich -s /usr/bin/bash -c "git clone https://github.com/loeeeee/immich-in-lxc.git /tmp/immich-in-lxc"
 #cd /tmp/immich-in-lxc
