@@ -30,6 +30,16 @@ LOG_DIR="/var/log/immich"
 IMMICH_REPO_TAG="v1.132.3" # текущая стабильная версия
 DB_PASSWORD="$(openssl rand -base64 24)" # генерация безопасного пароля
 
+# Определение версии Ubuntu/Debian
+if [ -f /etc/os-release ]; then
+    $STD . /etc/os-release
+    $STD OS=$ID
+    $STD VERSION=$VERSION_ID
+    msg_info "Обнаружена ОС: $OS $VERSION"
+else
+    msg_error "Невозможно определить версию ОС"
+fi
+
 # Установка базовых зависимостей
 msg_info "Установка базовых зависимостей..."
 $STD apt install -y curl git python3-venv python3-dev build-essential unzip postgresql-common gnupg software-properties-common
