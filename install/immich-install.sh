@@ -61,17 +61,22 @@ $STD apt install -y curl git python3-venv python3-dev build-essential unzip post
 msg_ok "Базовые зависимости установлены"
 
 # Установка PostgreSQL с pgvector
-msg_info "Установка PostgreSQL с расширением pgvector..."
+msg_info "Установка PostgreSQL с расширением pgvecto.rs..."
 $STD /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-$STD apt install -y postgresql-17 postgresql-17-pgvector
+$STD apt install -y postgresql-17
+$STD deb=$(curl -w "%{filename_effective}" -LO https://github.com/tensorchord/pgvecto.rs/releases/download/v0.4.0/vectors-pg17_0.4.0_amd64.deb) && dpkg -i $deb && rm $deb && unset deb
+
 msg_ok "PostgreSQL установлен"
 
 # Настройка базы данных
 msg_info "Настройка базы данных PostgreSQL..."
+$STD sudo -u postgres psql -c 'ALTER SYSTEM SET shared_preload_libraries = "vectors.so"'
+$STD sudo -u postgres psql -c 'ALTER SYSTEM SET search_path TO "$user", public, vectors'
 $STD sudo -u postgres psql -c "CREATE DATABASE immich;"
 $STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
 $STD sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
 $STD sudo -u postgres psql -c "ALTER USER immich WITH SUPERUSER;"
+systemctl restart postgresql
 msg_ok "База данных настроена"
 
 # Установка Redis
