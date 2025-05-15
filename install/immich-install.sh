@@ -169,8 +169,8 @@ msg_ok "Immich установлен"
 
 # Настройка runtime.env
 msg_info "Настройка runtime.env..."
-$STD sed -i "s/A_SEHR_SAFE_PASSWORD/$DB_PASSWORD/g" $IMMICH_DIR/runtime.env
-$STD sed -i "s|America/New_York|$(timedatectl show --property=Timezone --value)|g" $IMMICH_DIR/runtime.env
+sed -i "s/A_SEHR_SAFE_PASSWORD/$DB_PASSWORD/g" $IMMICH_DIR/runtime.env
+sed -i "s|America/New_York|$(timedatectl show --property=Timezone --value)|g" $IMMICH_DIR/runtime.env
 msg_ok "runtime.env настроен"
 
 # Запуск post-install скрипта
@@ -187,9 +187,9 @@ msg_ok "Директория для логов создана"
 
 # Запуск служб Immich
 msg_info "Запуск служб Immich..."
-$STD systemctl daemon-reload
-$STD systemctl enable --now immich-ml.service
-$STD systemctl enable --now immich-web.service
+systemctl daemon-reload
+systemctl enable --now immich-ml.service
+systemctl enable --now immich-web.service
 msg_ok "Службы Immich запущены"
 
 # Проверка статуса служб
