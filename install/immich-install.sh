@@ -28,7 +28,7 @@ REPO_URL="https://github.com/loeeeee/immich-in-lxc.git"
 REPO_DIR="$IMMICH_DIR/immich-in-lxc"
 LOG_DIR="/var/log/immich"
 IMMICH_REPO_TAG="v1.132.3" # текущая стабильная версия
-DB_PASSWORD="$(openssl rand -base64 24)" # генерация безопасного пароля
+DB_PASSWORD="$(openssl rand -base64 24 | tr -dc 'a-zA-Z0-9')" # генерация безопасного пароля
 
 # Определение версии Ubuntu/Debian
 if [ -f /etc/os-release ]; then
