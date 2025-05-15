@@ -165,7 +165,8 @@ msg_ok ".env файл создан"
 msg_info "Установка Immich..."
 # su - $IMMICH_USER -c "cd $REPO_DIR && ./install.sh"
 # $STD su - $IMMICH_USER -c "export REPO_DIR='$REPO_DIR' && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && cd \"\$REPO_DIR\" && ./install.sh"
-$STD su - $IMMICH_USER -c 'export REPO_DIR='$REPO_DIR' && export NVM_DIR=$HOME/.nvm && [ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && cd '$REPO_DIR' && ./install.sh'
+# $STD su - $IMMICH_USER -c 'export REPO_DIR='$REPO_DIR' && export NVM_DIR=$HOME/.nvm && [ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && cd '$REPO_DIR' && ./install.sh'
+$STD sudo -u $IMMICH_USER /bin/bash -c 'export REPO_DIR='$REPO_DIR' && export NVM_DIR=$HOME/.nvm && [ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && cd '$REPO_DIR' && ./install.sh'
 msg_ok "Immich установлен"
 
 # Настройка runtime.env
