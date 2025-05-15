@@ -40,6 +40,21 @@ else
     msg_error "Невозможно определить версию ОС"
 fi
 
+# Проверка поддерживаемой версии ОС
+if [ "$OS" = "ubuntu" ]; then
+    if [ "$VERSION" != "24.04" ]; then
+        msg_warn "Рекомендуется использовать Ubuntu 24.04, текущая версия: $VERSION"
+    fi
+    DEP_SCRIPT="dep-ubuntu.sh"
+elif [ "$OS" = "debian" ]; then
+    if [ "$VERSION" != "12" ]; then
+        msg_warn "Рекомендуется использовать Debian 12, текущая версия: $VERSION"
+    fi
+    DEP_SCRIPT="dep-debian.sh"
+else
+    msg_error "Неподдерживаемая ОС: $OS"
+fi
+
 # Установка базовых зависимостей
 msg_info "Установка базовых зависимостей..."
 $STD apt install -y curl git python3-venv python3-dev build-essential unzip postgresql-common gnupg software-properties-common
@@ -68,13 +83,13 @@ msg_ok "Redis установлен"
 msg_info "Установка FFmpeg с поддержкой аппаратного ускорения..."
 if [ "$OS" = "ubuntu" ]; then
     $STD apt install -y curl gnupg software-properties-common
-    add-apt-repository universe -y
+    $STD add-apt-repository universe -y
     mkdir -p /etc/apt/keyrings
     curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
     export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
     export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
     export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
-    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources > /dev/null
 Types: deb
 URIs: https://repo.jellyfin.org/${VERSION_OS}
 Suites: ${VERSION_CODENAME}
@@ -87,7 +102,7 @@ elif [ "$OS" = "debian" ]; then
     mkdir -p /etc/apt/keyrings
     curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
     export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
-    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources > /dev/null
 Types: deb
 URIs: https://repo.jellyfin.org/debian
 Suites: bookworm
