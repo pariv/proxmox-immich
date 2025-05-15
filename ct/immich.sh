@@ -95,7 +95,6 @@ exit
 }
 
 start
-default_settings
 build_container
 description
 
