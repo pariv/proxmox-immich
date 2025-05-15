@@ -69,36 +69,39 @@ fi
 
 # Обновление системы
 msg_info "Обновление системы..."
-apt update && apt upgrade -y
+$STD apt update && apt upgrade -y
 msg_ok "Система обновлена"
 
 # Установка базовых зависимостей
 msg_info "Установка базовых зависимостей..."
-apt install -y curl git python3-venv python3-dev build-essential unzip postgresql-common gnupg software-properties-common
+$STD apt install -y curl git python3-venv python3-dev build-essential unzip postgresql-common gnupg software-properties-common
 msg_ok "Базовые зависимости установлены"
 
 # Установка PostgreSQL с pgvector
 msg_info "Установка PostgreSQL с расширением pgvector..."
-/usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-apt install -y postgresql-17 postgresql-17-pgvector
+$STD /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+$STD apt install -y postgresql-17 postgresql-17-pgvector
 msg_ok "PostgreSQL установлен"
 
 # Настройка базы данных
 msg_info "Настройка базы данных PostgreSQL..."
-sudo -u postgres psql -c "CREATE DATABASE immich;"
-sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
-sudo -u postgres psql -c "ALTER USER immich WITH SUPERUSER;"
+$STD sudo -u postgres psql -c "CREATE DATABASE immich;"
+$STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
+$STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
+$STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
+$STD sudo -u postgres psql -c "CREATE USER immich WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
+$STD sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE immich to immich;"
+$STD sudo -u postgres psql -c "ALTER USER immich WITH SUPERUSER;"
 msg_ok "База данных настроена"
 
 # Установка Redis
 msg_info "Установка Redis..."
-apt install -y redis
+$STD apt install -y redis
 msg_ok "Redis установлен"
 
 # Установка FFmpeg от Jellyfin с поддержкой аппаратного ускорения
 msg_info "Установка FFmpeg с поддержкой аппаратного ускорения..."
-if [ "$OS" = "ubuntu" ]; then
+$STD if [ "$OS" = "ubuntu" ]; then
     apt install -y curl gnupg software-properties-common
     add-apt-repository universe -y
     mkdir -p /etc/apt/keyrings
@@ -129,44 +132,44 @@ Signed-By: /etc/apt/keyrings/jellyfin.gpg
 EOF
 fi
 
-apt update
-apt install -y jellyfin-ffmpeg7
-ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/bin/ffmpeg
-ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/bin/ffprobe
+$STD apt update
+$STD apt install -y jellyfin-ffmpeg7
+$STD ln -sf /usr/lib/jellyfin-ffmpeg/ffmpeg /usr/bin/ffmpeg
+$STD ln -sf /usr/lib/jellyfin-ffmpeg/ffprobe /usr/bin/ffprobe
 msg_ok "FFmpeg установлен"
 
 # Создание пользователя Immich
 msg_info "Создание пользователя Immich..."
-adduser --shell /bin/bash --disabled-password $IMMICH_USER --comment "Immich Mich" --gecos ""
-mkdir -p $UPLOAD_DIR
-chown -R $IMMICH_USER:$IMMICH_USER $IMMICH_DIR
+$STD adduser --shell /bin/bash --disabled-password $IMMICH_USER --comment "Immich Mich" --gecos ""
+$STD mkdir -p $UPLOAD_DIR
+$STD chown -R $IMMICH_USER:$IMMICH_USER $IMMICH_DIR
 msg_ok "Пользователь Immich создан"
 
 # Установка Node.js через nvm для пользователя Immich
 msg_info "Установка Node.js для пользователя Immich..."
-su - $IMMICH_USER -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash'
-su - $IMMICH_USER -c 'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install 22'
+$STD su - $IMMICH_USER -c 'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash'
+$STD su - $IMMICH_USER -c 'export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" && nvm install 22'
 msg_ok "Node.js установлен"
 
 # Клонирование репозитория immich-in-lxc
 msg_info "Клонирование репозитория immich-in-lxc..."
-su - $IMMICH_USER -c "git clone $REPO_URL $REPO_DIR"
+$STD su - $IMMICH_USER -c "git clone $REPO_URL $REPO_DIR"
 msg_ok "Репозиторий immich-in-lxc клонирован"
 
 # Установка зависимостей для сборки библиотек обработки изображений
 msg_info "Установка зависимостей для сборки библиотек обработки изображений..."
-cd $REPO_DIR
-./$DEP_SCRIPT
+$STD cd $REPO_DIR
+$STD ./$DEP_SCRIPT
 msg_ok "Зависимости для сборки установлены"
 
 # Сборка библиотек обработки изображений
 msg_info "Сборка библиотек обработки изображений (это может занять некоторое время)..."
-./pre-install.sh
+$STD ./pre-install.sh
 msg_ok "Библиотеки обработки изображений собраны"
 
 # Создание .env файла
 msg_info "Создание .env файла для установки Immich..."
-cat > $REPO_DIR/.env << EOF
+$STD cat > $REPO_DIR/.env << EOF
 # Installation settings
 REPO_TAG=$IMMICH_REPO_TAG
 INSTALL_DIR=$IMMICH_DIR
@@ -181,38 +184,39 @@ msg_ok ".env файл создан"
 # Запуск скрипта установки Immich
 msg_info "Установка Immich..."
 # su - $IMMICH_USER -c "cd $REPO_DIR && ./install.sh"
-su - $IMMICH_USER -c "export REPO_DIR='$REPO_DIR' && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && cd \"\$REPO_DIR\" && ./install.sh"
+$STD su - $IMMICH_USER -c "export REPO_DIR='$REPO_DIR' && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && cd \"\$REPO_DIR\" && ./install.sh"
 msg_ok "Immich установлен"
 
 # Настройка runtime.env
 msg_info "Настройка runtime.env..."
-sed -i "s/A_SEHR_SAFE_PASSWORD/$DB_PASSWORD/g" $IMMICH_DIR/runtime.env
-sed -i "s|America/New_York|$(timedatectl show --property=Timezone --value)|g" $IMMICH_DIR/runtime.env
+$STD sed -i "s/A_SEHR_SAFE_PASSWORD/$DB_PASSWORD/g" $IMMICH_DIR/runtime.env
+$STD sed -i "s|America/New_York|$(timedatectl show --property=Timezone --value)|g" $IMMICH_DIR/runtime.env
 msg_ok "runtime.env настроен"
 
 # Запуск post-install скрипта
 msg_info "Выполнение post-install скрипта..."
-cd $REPO_DIR
-./post-install.sh
+$STD cd $REPO_DIR
+$STD ./post-install.sh
 msg_ok "post-install скрипт выполнен"
 
 # Создание директории для логов
 msg_info "Создание директории для логов..."
-mkdir -p $LOG_DIR
-chown -R $IMMICH_USER:$IMMICH_USER $LOG_DIR
+$STD mkdir -p $LOG_DIR
+$STD chown -R $IMMICH_USER:$IMMICH_USER $LOG_DIR
 msg_ok "Директория для логов создана"
 
 # Запуск служб Immich
 msg_info "Запуск служб Immich..."
-systemctl daemon-reload
-systemctl enable --now immich-ml.service
-systemctl enable --now immich-web.service
+$STD systemctl daemon-reload
+$STD systemctl enable --now immich-ml.service
+$STD systemctl enable --now immich-web.service
 msg_ok "Службы Immich запущены"
 
 # Проверка статуса служб
 msg_info "Проверка статуса служб..."
-systemctl status immich-ml.service --no-pager || true
-systemctl status immich-web.service --no-pager || true
+$STD systemctl status immich-ml.service --no-pager || true
+$STD systemctl status immich-web.service --no-pager || true
+msg_ok "Статус служб проверен"
 
 # Получение IP-адреса
 IP_ADDRESS=$(hostname -I | awk '{print $1}')

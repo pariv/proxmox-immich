@@ -95,10 +95,11 @@ exit
 }
 
 start
+default_settings
 build_container
 description
 
 msg_ok "Completed Successfully!\n"
-echo -e "${APP} Setup should be reachable by going to the following URL.
-         ${BL}http://${IP}:3001${CL} \n"
+# echo -e "${APP} Setup should be reachable by going to the following URL.
+#          ${BL}http://${IP}:3001${CL} \n"
 
