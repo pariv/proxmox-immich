@@ -197,24 +197,24 @@ msg_ok "Службы Immich запущены"
 
 # Проверка статуса служб
 msg_info "Проверка статуса служб..."
-$STD systemctl status immich-ml.service --no-pager || true
-$STD systemctl status immich-web.service --no-pager || true
+systemctl status immich-ml.service --no-pager || true
+systemctl status immich-web.service --no-pager || true
 msg_ok "Статус служб проверен"
 
 # Получение IP-адреса
 IP_ADDRESS=$(hostname -I | awk '{print $1}')
 
-echo -e "\n${GREEN}=========================================${NC}"
-echo -e "${GREEN}Установка Immich успешно завершена!${NC}"
-echo -e "${GREEN}=========================================${NC}\n"
+echo -e "\n${DGN}=========================================${CL}"
+echo -e "${DGN}Установка Immich успешно завершена!${CL}"
+echo -e "${DGN}=========================================${CL}\n"
 
-echo -e "Веб-интерфейс: ${BLUE}http://$IP_ADDRESS:2283${NC}"
-echo -e "Пароль для базы данных: ${YELLOW}$DB_PASSWORD${NC}"
-echo -e "Файлы журналов: ${BLUE}$LOG_DIR${NC}"
-echo -e "\n${YELLOW}ВАЖНО: После первого входа в веб-интерфейс Immich${NC}"
-echo -e "${YELLOW}необходимо изменить URL для машинного обучения:${NC}"
+echo -e "Веб-интерфейс: ${BL}http://$IP_ADDRESS:2283${CL}"
+echo -e "Пароль для базы данных: ${YW}$DB_PASSWORD${CL}"
+echo -e "Файлы журналов: ${BL}$LOG_DIR${CL}"
+echo -e "\n${YW}ВАЖНО: После первого входа в веб-интерфейс Immich${CL}"
+echo -e "${YW}необходимо изменить URL для машинного обучения:${CL}"
 echo -e "Зайдите в: Administration > Settings > Machine Learning Settings"
-echo -e "Установите URL: ${BLUE}http://localhost:3003${NC}"
+echo -e "Установите URL: ${BL}http://localhost:3003${CL}"
 echo -e "\nДля проверки аппаратного ускорения транскодирования:"
 echo -e "Зайдите в: Administration > Settings > Video Transcoding Settings"
 echo -e "Выберите ваш метод аппаратного ускорения (NVENC, QuickSync и т.д.)"
