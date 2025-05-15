@@ -68,13 +68,13 @@ msg_ok "Redis установлен"
 msg_info "Установка FFmpeg с поддержкой аппаратного ускорения..."
 if [ "$OS" = "ubuntu" ]; then
     $STD apt install -y curl gnupg software-properties-common
-    $STD add-apt-repository universe -y
-    $STD mkdir -p /etc/apt/keyrings
+    add-apt-repository universe -y
+    mkdir -p /etc/apt/keyrings
     curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
     export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
     export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
     export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
-    $STD cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
 Types: deb
 URIs: https://repo.jellyfin.org/${VERSION_OS}
 Suites: ${VERSION_CODENAME}
@@ -87,7 +87,7 @@ elif [ "$OS" = "debian" ]; then
     mkdir -p /etc/apt/keyrings
     curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
     export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
-    $STD cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
 Types: deb
 URIs: https://repo.jellyfin.org/debian
 Suites: bookworm
