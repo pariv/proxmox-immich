@@ -70,10 +70,10 @@ if [ "$OS" = "ubuntu" ]; then
     $STD apt install -y curl gnupg software-properties-common
     $STD add-apt-repository universe -y
     $STD mkdir -p /etc/apt/keyrings
-    $STD curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
-    $STD export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
-    $STD export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
-    $STD export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
+    curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
+    export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
+    export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
+    export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
     $STD cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
 Types: deb
 URIs: https://repo.jellyfin.org/${VERSION_OS}
@@ -84,9 +84,9 @@ Signed-By: /etc/apt/keyrings/jellyfin.gpg
 EOF
 elif [ "$OS" = "debian" ]; then
     $STD apt install -y curl gnupg
-    $STD mkdir -p /etc/apt/keyrings
-    $STD curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
-    $STD export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
+    mkdir -p /etc/apt/keyrings
+    curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
+    export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
     $STD cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
 Types: deb
 URIs: https://repo.jellyfin.org/debian
@@ -123,7 +123,7 @@ msg_ok "Репозиторий immich-in-lxc клонирован"
 
 # Установка зависимостей для сборки библиотек обработки изображений
 msg_info "Установка зависимостей для сборки библиотек обработки изображений..."
-$STD cd $REPO_DIR
+cd $REPO_DIR
 $STD ./$DEP_SCRIPT
 msg_ok "Зависимости для сборки установлены"
 
@@ -160,14 +160,14 @@ msg_ok "runtime.env настроен"
 
 # Запуск post-install скрипта
 msg_info "Выполнение post-install скрипта..."
-$STD cd $REPO_DIR
+cd $REPO_DIR
 $STD ./post-install.sh
 msg_ok "post-install скрипт выполнен"
 
 # Создание директории для логов
 msg_info "Создание директории для логов..."
-$STD mkdir -p $LOG_DIR
-$STD chown -R $IMMICH_USER:$IMMICH_USER $LOG_DIR
+mkdir -p $LOG_DIR
+chown -R $IMMICH_USER:$IMMICH_USER $LOG_DIR
 msg_ok "Директория для логов создана"
 
 # Запуск служб Immich
