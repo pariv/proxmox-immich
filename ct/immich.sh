@@ -19,9 +19,9 @@ EOF
 header_info
 echo -e "Loading..."
 APP="immich"
-var_disk="16"
-var_cpu="1"
-var_ram="512"
+var_disk="32"
+var_cpu="2"
+var_ram="4096"
 var_os="ubuntu"
 var_version="24.04"
 variables
