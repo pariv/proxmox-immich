@@ -30,48 +30,6 @@ LOG_DIR="/var/log/immich"
 IMMICH_REPO_TAG="v1.132.3" # текущая стабильная версия
 DB_PASSWORD="$(openssl rand -base64 24)" # генерация безопасного пароля
 
-# Цветной вывод для улучшения читаемости
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-
-msg_warn() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-# Определение версии Ubuntu/Debian
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS=$ID
-    VERSION=$VERSION_ID
-    msg_info "Обнаружена ОС: $OS $VERSION"
-else
-    msg_error "Невозможно определить версию ОС"
-fi
-
-# Проверка поддерживаемой версии ОС
-if [ "$OS" = "ubuntu" ]; then
-    if [ "$VERSION" != "24.04" ]; then
-        msg_warn "Рекомендуется использовать Ubuntu 24.04, текущая версия: $VERSION"
-    fi
-    DEP_SCRIPT="dep-ubuntu.sh"
-elif [ "$OS" = "debian" ]; then
-    if [ "$VERSION" != "12" ]; then
-        msg_warn "Рекомендуется использовать Debian 12, текущая версия: $VERSION"
-    fi
-    DEP_SCRIPT="dep-debian.sh"
-else
-    msg_error "Неподдерживаемая ОС: $OS"
-fi
-
-# Обновление системы
-msg_info "Обновление системы..."
-$STD apt update && apt upgrade -y
-msg_ok "Система обновлена"
-
 # Установка базовых зависимостей
 msg_info "Установка базовых зависимостей..."
 $STD apt install -y curl git python3-venv python3-dev build-essential unzip postgresql-common gnupg software-properties-common
@@ -98,15 +56,15 @@ msg_ok "Redis установлен"
 
 # Установка FFmpeg от Jellyfin с поддержкой аппаратного ускорения
 msg_info "Установка FFmpeg с поддержкой аппаратного ускорения..."
-$STD if [ "$OS" = "ubuntu" ]; then
-    apt install -y curl gnupg software-properties-common
-    add-apt-repository universe -y
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
-    export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
-    export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
-    export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
-    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+if [ "$OS" = "ubuntu" ]; then
+    $STD apt install -y curl gnupg software-properties-common
+    $STD add-apt-repository universe -y
+    $STD mkdir -p /etc/apt/keyrings
+    $STD curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
+    $STD export VERSION_OS="$( awk -F'=' '/^ID=/{ print $NF }' /etc/os-release )"
+    $STD export VERSION_CODENAME="$( awk -F'=' '/^VERSION_CODENAME=/{ print $NF }' /etc/os-release )"
+    $STD export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
+    $STD cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
 Types: deb
 URIs: https://repo.jellyfin.org/${VERSION_OS}
 Suites: ${VERSION_CODENAME}
@@ -115,11 +73,11 @@ Architectures: ${DPKG_ARCHITECTURE}
 Signed-By: /etc/apt/keyrings/jellyfin.gpg
 EOF
 elif [ "$OS" = "debian" ]; then
-    apt install -y curl gnupg
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
-    export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
-    cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
+    $STD apt install -y curl gnupg
+    $STD mkdir -p /etc/apt/keyrings
+    $STD curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key | gpg --dearmor -o /etc/apt/keyrings/jellyfin.gpg
+    $STD export DPKG_ARCHITECTURE="$( dpkg --print-architecture )"
+    $STD cat <<EOF | tee /etc/apt/sources.list.d/jellyfin.sources
 Types: deb
 URIs: https://repo.jellyfin.org/debian
 Suites: bookworm
