@@ -27,7 +27,7 @@ UPLOAD_DIR="$IMMICH_DIR/upload"
 REPO_URL="https://github.com/loeeeee/immich-in-lxc.git"
 REPO_DIR="$IMMICH_DIR/immich-in-lxc"
 LOG_DIR="/var/log/immich"
-IMMICH_REPO_TAG="v1.129.0" # текущая стабильная версия
+IMMICH_REPO_TAG="v1.132.3" # текущая стабильная версия
 DB_PASSWORD="$(openssl rand -base64 24)" # генерация безопасного пароля
 
 # Цветной вывод для улучшения читаемости
