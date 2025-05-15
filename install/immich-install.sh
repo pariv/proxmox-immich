@@ -139,12 +139,12 @@ msg_ok "Репозиторий immich-in-lxc клонирован"
 # Установка зависимостей для сборки библиотек обработки изображений
 msg_info "Установка зависимостей для сборки библиотек обработки изображений..."
 cd $REPO_DIR
-$STD ./$DEP_SCRIPT
+# $STD ./$DEP_SCRIPT
 msg_ok "Зависимости для сборки установлены"
 
 # Сборка библиотек обработки изображений
 msg_info "Сборка библиотек обработки изображений (это может занять некоторое время)..."
-$STD ./pre-install.sh
+# $STD ./pre-install.sh
 msg_ok "Библиотеки обработки изображений собраны"
 
 # Создание .env файла
@@ -165,8 +165,9 @@ msg_ok ".env файл создан"
 msg_info "Установка Immich..."
 # su - $IMMICH_USER -c "cd $REPO_DIR && ./install.sh"
 # $STD su - $IMMICH_USER -c "export REPO_DIR='$REPO_DIR' && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && cd \"\$REPO_DIR\" && ./install.sh"
+$STD sudo -u $IMMICH_USER bash -c "export REPO_DIR='$REPO_DIR' && export NVM_DIR=\"\$HOME/.nvm\" && [ -s \"\$NVM_DIR/nvm.sh\" ] && . \"\$NVM_DIR/nvm.sh\" && cd \"\$REPO_DIR\" && ./install.sh"
 # $STD su - $IMMICH_USER -c 'export REPO_DIR='$REPO_DIR' && export NVM_DIR=$HOME/.nvm && [ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && cd '$REPO_DIR' && ./install.sh'
-$STD sudo -u $IMMICH_USER /bin/bash -c 'export REPO_DIR='$REPO_DIR' && export NVM_DIR=$HOME/.nvm && [ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && cd '$REPO_DIR' && ./install.sh'
+# $STD sudo -u $IMMICH_USER bash -c 'export REPO_DIR='$REPO_DIR' && export NVM_DIR=$HOME/.nvm && [ -s $NVM_DIR/nvm.sh ] && . $NVM_DIR/nvm.sh && cd '$REPO_DIR' && ./install.sh'
 msg_ok "Immich установлен"
 
 # Настройка runtime.env
