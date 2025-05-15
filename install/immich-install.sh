@@ -32,9 +32,9 @@ DB_PASSWORD="$(openssl rand -base64 24)" # генерация безопасно
 
 # Определение версии Ubuntu/Debian
 if [ -f /etc/os-release ]; then
-    $STD . /etc/os-release
-    $STD OS=$ID
-    $STD VERSION=$VERSION_ID
+    . /etc/os-release
+    OS=$ID
+    VERSION=$VERSION_ID
     msg_info "Обнаружена ОС: $OS $VERSION"
 else
     msg_error "Невозможно определить версию ОС"
