@@ -63,8 +63,14 @@ msg_ok "Базовые зависимости установлены"
 # Установка PostgreSQL с pgvector
 msg_info "Установка PostgreSQL с расширением pgvecto.rs..."
 $STD /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-$STD apt install -y postgresql-17
-$STD deb=$(curl -w "%{filename_effective}" -LO https://github.com/tensorchord/pgvecto.rs/releases/download/v0.4.0/vectors-pg17_0.4.0_amd64.deb) && dpkg -i $deb && rm $deb && unset deb
+$STD apt install -y postgresql-17 postgresql-17-pgvector
+# $STD deb=$(curl -w "%{filename_effective}" -LO https://github.com/tensorchord/pgvecto.rs/releases/download/v0.4.0/vectors-pg17_0.4.0_amd64.deb) && dpkg -i $deb && rm $deb && unset deb
+deb=$(basename https://github.com/tensorchord/pgvecto.rs/releases/download/v0.4.0/vectors-pg17_0.4.0_amd64.deb) && \
+$STD curl -LO "https://github.com/tensorchord/pgvecto.rs/releases/download/v0.4.0/$deb" && \
+$STD dpkg -i "$deb" && \
+$STD rm "$deb" && \
+unset deb
+
 
 msg_ok "PostgreSQL установлен"
 
