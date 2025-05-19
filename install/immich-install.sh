@@ -147,6 +147,28 @@ msg_info "Клонирование репозитория immich-in-lxc..."
 $STD su - $IMMICH_USER -c "git clone $REPO_URL $REPO_DIR"
 msg_ok "Репозиторий immich-in-lxc клонирован"
 
+# Создание build-lock.json из отдельных json файлов в base-images
+msg_info "Подготовка структуры build-lock.json для совместимости..."
+$STD su - $IMMICH_USER -c "cd $REPO_DIR && git clone https://github.com/immich-app/base-images.git"
+$STD su - $IMMICH_USER -c "mkdir -p $REPO_DIR/base-images/server/bin"
+$STD su - $IMMICH_USER -c "cd $REPO_DIR && cat > create_build_lock.sh << 'EOF'
+#!/bin/bash
+echo '{\"sources\":[' > base-images/server/bin/build-lock.json
+first=true
+for file in base-images/server/sources/*.json; do
+  content=\$(cat \"\$file\")
+  if [ \"\$first\" = true ]; then
+    first=false
+  else
+    echo ',' >> base-images/server/bin/build-lock.json
+  fi
+  echo \"\$content\" | tr -d '\\n\\t ' >> base-images/server/bin/build-lock.json
+done
+echo ']}' >> base-images/server/bin/build-lock.json
+EOF"
+$STD su - $IMMICH_USER -c "cd $REPO_DIR && chmod +x create_build_lock.sh && ./create_build_lock.sh"
+msg_ok "build-lock.json успешно создан"
+
 # Установка зависимостей для сборки библиотек обработки изображений
 msg_info "Установка зависимостей для сборки библиотек обработки изображений..."
 cd $REPO_DIR
